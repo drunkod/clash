@@ -1,0 +1,120 @@
+# Port for HTTP(S) proxy
+port: 7890
+# Port for SOCKS5 proxy  
+socks-port: 7891
+# Allow LAN connections
+allow-lan: true
+# Clash mode
+mode: rule
+# Log level
+log-level: info
+
+# DNS configuration
+dns:
+  enable: true
+  enhanced-mode: fake-ip
+  listen: 0.0.0.0:53
+  default-nameserver:
+    - 8.8.8.8
+    - 1.1.1.1
+  nameserver:
+    - 8.8.8.8
+    - 1.1.1.1
+    - https://dns.google/dns-query
+  fallback:
+    - https://1.1.1.1/dns-query
+  fake-ip-range: 198.18.0.1/16
+
+# Proxy definitions
+proxies:
+  # Your organization's HTTP proxy
+  - name: "OrgProxy-HTTP"
+    type: http
+    server: proxy
+    port: 3128
+    # Uncomment if authentication needed:
+    # username: your_username
+    # password: your_password
+
+  # Alternative SOCKS5 config (if your proxy supports it)
+  - name: "OrgProxy-SOCKS"
+    type: socks5
+    server: proxy
+    port: 3128
+    # username: your_username
+    # password: your_password
+
+  # Direct connection (bypasses proxy)
+  - name: "DIRECT"
+    type: direct
+
+# Proxy groups for rule routing
+proxy-groups:
+  # Main selector
+  - name: "Proxy"
+    type: select
+    proxies:
+      - OrgProxy-HTTP
+      - OrgProxy-SOCKS
+      - DIRECT
+      - AdBlock
+
+  # Automatic fallback group
+  - name: "Auto"
+    type: fallback
+    proxies:
+      - OrgProxy-HTTP
+      - OrgProxy-SOCKS
+      - DIRECT
+    url: 'http://www.gstatic.com/generate_204'
+    interval: 300
+
+  # Ad blocking group
+  - name: "AdBlock"
+    type: select
+    proxies:
+      - REJECT
+      - DIRECT
+
+# Rule providers for ad blocking
+rule-providers:
+  adblock:
+    type: http
+    behavior: classical
+    path: ./ruleset/adblock.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Advertising/Advertising_Classical.yaml
+    interval: 86400
+
+# Traffic rules
+rules:
+  # Ad blocking rules
+  - DOMAIN-SUFFIX,google-analytics.com,AdBlock
+  - DOMAIN-SUFFIX,googletagmanager.com,AdBlock
+  - DOMAIN-SUFFIX,googlesyndication.com,AdBlock
+  - DOMAIN-SUFFIX,doubleclick.net,AdBlock
+  - DOMAIN-SUFFIX,adfox.yandex.ru,AdBlock
+  - DOMAIN-SUFFIX,mc.yandex.ru,AdBlock
+  - DOMAIN-SUFFIX,an.yandex.ru,AdBlock
+  - DOMAIN-SUFFIX,google-analytics.com,AdBlock
+  - DOMAIN-SUFFIX,facebook.com/tr,AdBlock
+  - DOMAIN-SUFFIX,analytics.tiktok.com,AdBlock
+  
+  # Use rule provider for comprehensive ad blocking
+  - RULE-SET,adblock,AdBlock
+  
+  # Local network direct
+  - IP-CIDR,192.168.0.0/16,DIRECT
+  - IP-CIDR,10.0.0.0/8,DIRECT
+  - IP-CIDR,172.16.0.0/12,DIRECT
+  - IP-CIDR,127.0.0.0/8,DIRECT
+  
+  # Library local domains
+  - DOMAIN-SUFFIX,chelib.local,DIRECT
+  - DOMAIN-SUFFIX,chelib.ru,DIRECT
+  - DOMAIN-SUFFIX,localhost,DIRECT
+  
+  # Russian sites through proxy
+  - GEOIP,RU,Proxy
+  
+  # Everything else through proxy
+  - MATCH,Proxy

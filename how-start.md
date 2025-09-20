@@ -1,0 +1,1 @@
+ ~/nixstatic shell nixpkgs/nixos-25.05#clash-meta --impure -c bash -c "clash-meta -d ./.config/clash"
