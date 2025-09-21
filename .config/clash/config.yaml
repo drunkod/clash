@@ -1,105 +1,68 @@
-# Port for HTTP(S) proxy
 port: 7890
-# Port for SOCKS5 proxy
 socks-port: 7891
-# Allow LAN connections
 allow-lan: true
-# Clash mode
 mode: rule
-# Log level
-log-level: info
+log-level: debug
+# skip-cert-verify: false  # set true only if your corp proxy MITMs TLS and you can't install its root CA
 
-# DNS configuration
 dns:
   enable: true
+  ipv6: false
   enhanced-mode: fake-ip
-  listen: 127.0.0.1:53
+  listen: 127.0.0.1:1053
+
+  default-nameserver:
+    - 192.168.0.50
+    - 192.168.0.55
+
+  # Only this DoH upstream (via corporate proxy)
   nameserver:
-    - 8.8.8.8
-    - 1.1.1.1
-    # Secure DNS for privacy
-    - https://dns.google/dns-query
-  fallback:
-    - https://1.1.1.1/dns-query
+    - https://xbox-dns.ru/dns-query#CorpProxy
+    # - https://dns.google/dns-query#CorpProxy
+    # - https://cloudflare-dns.com/dns-query#CorpProxy
+  nameserver-policy:
+    "geosite:private":
+      - 192.168.0.50
+      - 192.168.0.55
+    "+.chelib.local":
+      - 192.168.0.50
+      - 192.168.0.55
+    "+.localnet":
+      - 192.168.0.50
+      - 192.168.0.55
+    "+.chelib.ru":
+      - 192.168.0.50
+      - 192.168.0.55
+
+  proxy-server-nameserver:
+    - system
+
   fake-ip-range: 198.18.0.1/16
 
-# Proxy definitions
 proxies:
-  # Your organization's HTTP proxy
-  - name: "OrgProxy-HTTP"
+  - name: CorpProxy
     type: http
-    ## ACTION REQUIRED: Replace 'proxy.your-company.com' with your actual proxy server address.
-    server: proxy
+    server: 192.168.0.10
     port: 3128
-    # username: your_username
-    # password: your_password
+    username: 'chelib.local\reader'
+    password: ''
 
-  # Alternative SOCKS5 config (if your proxy supports it)
-  - name: "OrgProxy-SOCKS"
-    type: socks5
-    ## ACTION REQUIRED: Replace 'proxy.your-company.com' with your actual proxy server address.
-    server: proxy
-    port: 3128 # Confirm this is the correct port for SOCKS5
-    # username: your_username
-    # password: your_password
-
-# Proxy groups for rule routing
 proxy-groups:
-  # Main selector - User chooses the main routing policy here
-  - name: "Proxy"
+  - name: Proxy
     type: select
     proxies:
-      - Auto
-      - OrgProxy-HTTP
-      - OrgProxy-SOCKS
+      - CorpProxy
       - DIRECT
 
-  # Automatic fallback group - Chooses the first available proxy
-  - name: "Auto"
-    type: fallback
-    proxies:
-      - OrgProxy-HTTP
-      - OrgProxy-SOCKS
-      - DIRECT
-    url: 'http://www.gstatic.com/generate_204'
-    interval: 300
-
-  # Ad blocking group - Used in rules to REJECT or allow ads
-  - name: "AdBlock"
-    type: select
-    proxies:
-      - REJECT # This blocks the connection
-      - DIRECT
-
-# Rule providers for ad blocking
-rule-providers:
-  adblock:
-    type: http
-    behavior: classical
-    path: ./ruleset/adblock.yaml
-    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Advertising/Advertising_Classical.yaml
-    interval: 86400 # Update every 24 hours
-
-# Traffic rules
-# Rules are processed from top to bottom. The first match wins.
 rules:
-  # Use rule provider for comprehensive ad blocking
-  - RULE-SET,adblock,AdBlock
-  
-  # Local network traffic should always go direct
   - IP-CIDR,192.168.0.0/16,DIRECT
   - IP-CIDR,10.0.0.0/8,DIRECT
   - IP-CIDR,172.16.0.0/12,DIRECT
   - IP-CIDR,127.0.0.0/8,DIRECT
-  
-  # Library/local domains go direct
+
   - DOMAIN-SUFFIX,chelib.local,DIRECT
+  - DOMAIN-SUFFIX,localnet,DIRECT
   - DOMAIN-SUFFIX,chelib.ru,DIRECT
   - DOMAIN-SUFFIX,localhost,DIRECT
-  
-  ## NOTE: This rule requires the 'Country.mmdb' file in your Clash config directory.
-  # Russian sites through the selected proxy policy
-  - GEOIP,RU,Proxy
-  
-  # Final catch-all rule: Everything else that didn't match above goes through the proxy policy
+
   - MATCH,Proxy
