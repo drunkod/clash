@@ -1,0 +1,52 @@
+# Version: REDIR-HOST
+# Simpler, classic mode. Best for proxy-aware applications like browsers.
+port: 7890
+socks-port: 7891
+mixed-port: 7892
+allow-lan: true
+mode: rule
+log-level: info
+
+dns:
+  enable: true
+  listen: 127.0.0.1:1053
+  ipv6: false
+  enhanced-mode: redir-host # <-- Key setting for this mode
+  prefer-h3: false
+  default-nameserver:
+    - 127.0.0.53
+    - 9.9.9.9
+  nameserver:
+    - https://xbox-dns.ru/dns-query#DNS-Proxy
+  
+  # --- NOTE: fake-ip-range and fake-ip-filter are removed ---
+  # They are not used by redir-host mode.
+
+proxies:
+  - name: corp-proxy
+    type: http
+    server: 192.18.0.10
+    port: 3128
+    headers:
+      User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0
+
+proxy-groups:
+  - name: Proxy
+    type: select
+    proxies:
+      - corp-proxy
+      - DIRECT
+  - name: DNS-Proxy
+    type: fallback
+    proxies:
+      # - corp-proxy
+      - DIRECT
+    url: https://cloudflare-dns.com/cdn-cgi/trace
+    interval: 300
+
+rules:
+  - DOMAIN-SUFFIX,xbox-dns.ru,DNS-Proxy
+  - MATCH,Proxy
+
+ntp:
+  enable: false

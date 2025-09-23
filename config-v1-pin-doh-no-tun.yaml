@@ -1,0 +1,71 @@
+port: 7890
+socks-port: 7891
+mixed-port: 7892
+allow-lan: true
+mode: rule
+log-level: info
+
+dns:
+  enable: true
+  listen: 127.0.0.1:1053
+  ipv6: false
+  enhanced-mode: fake-ip
+  prefer-h3: false
+
+  # Used to bootstrap DoH hostname resolution before DoH is up
+  default-nameserver:
+    - 127.0.0.53
+    - 9.9.9.9
+
+  # Route DoH traffic via the DNS-Proxy group (below)
+  nameserver:
+    - https://xbox-dns.ru/dns-query#DNS-Proxy
+
+  # Force these domains to always use your DoH specifically
+  nameserver-policy:
+    "chatgpt.com": https://xbox-dns.ru/dns-query#DNS-Proxy
+    "*.chatgpt.com": https://xbox-dns.ru/dns-query#DNS-Proxy
+    "openai.com": https://xbox-dns.ru/dns-query#DNS-Proxy
+    "*.openai.com": https://xbox-dns.ru/dns-query#DNS-Proxy
+
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter:
+    - "*.lan"
+    - "*.local"
+    - "localhost.*"
+    - "*.chelib.local"
+    - "*.chelib.ru"
+
+proxies:
+  - name: corp-proxy
+    type: http
+    server: 192.168.0.10
+    port: 3128
+    headers:
+      User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0
+
+  - name: eth-direct
+    type: direct
+    udp: true
+
+proxy-groups:
+  - name: Proxy
+    type: select
+    proxies:
+      - corp-proxy
+      - DIRECT
+
+  - name: DNS-Proxy
+    type: fallback
+    proxies:
+      - corp-proxy
+      - eth-direct
+    url: https://cloudflare-dns.com/cdn-cgi/trace
+    interval: 300
+
+rules:
+  - DOMAIN-SUFFIX,xbox-dns.ru,DNS-Proxy
+  - MATCH,Proxy
+
+ntp:
+  enable: false

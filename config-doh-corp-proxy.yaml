@@ -1,0 +1,80 @@
+# Proxy WITH DoH via corporate proxy - Ports 7890/7891/7892
+port: 7890
+socks-port: 7891
+mixed-port: 7892
+allow-lan: true
+mode: rule
+log-level: debug
+
+# Optional: bind to a specific NIC. If it causes issues, comment it out.
+# interface-name: enp2s0
+
+dns:
+  enable: true
+  listen: 127.0.0.1:1053
+  ipv6: false
+  enhanced-mode: fake-ip
+  prefer-h3: false
+
+  # Used to resolve the DoH hostname initially (before DoH is up).
+  # Keep 127.0.0.53 if you use systemd-resolved; add a public DNS as a fallback.
+  default-nameserver:
+    - 127.0.0.53
+    - 9.9.9.9
+
+  # Route DoH over the DNS-Proxy group (below), which prefers corp-proxy.
+  nameserver:
+    - https://xbox-dns.ru/dns-query#DNS-Proxy
+
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter:
+    - '*.lan'
+    - '*.local'
+    - 'localhost.*'
+    - '*.chelib.local'
+    - '*.chelib.ru'
+
+proxies:
+  - name: corp-proxy
+    type: http
+    server: 192.168.0.10
+    port: 3128
+    # username: your-username
+    # password: your-password
+    headers:
+      User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0
+    # If needed, bind to NIC; otherwise leave commented.
+    # interface-name: enp2s0
+
+  - name: eth-direct
+    type: direct
+    udp: true
+    # interface-name: enp2s0
+
+proxy-groups:
+  # Default proxy for general traffic
+  - name: Proxy
+    type: select
+    proxies:
+      - corp-proxy
+      - DIRECT
+
+  # For DoH: try corp-proxy first, fall back to direct if it works.
+  - name: DNS-Proxy
+    type: fallback
+    proxies:
+      - corp-proxy
+      - eth-direct
+    url: https://cloudflare-dns.com/cdn-cgi/trace
+    interval: 300
+
+rules:
+  # Helpful if dns.respect-rules is enabled in your build; harmless otherwise.
+  - DOMAIN-SUFFIX,xbox-dns.ru,DNS-Proxy
+
+  # Default rule
+  - MATCH,Proxy
+
+# Corporate networks often block UDP/123; disable Clash NTP (your OS time sync stays separate).
+ntp:
+  enable: false
