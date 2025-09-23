@@ -5,3 +5,6 @@
  killall cntlm clash-meta
 
  cntlm -c ./.config/clash/cntlm.conf -I -M http://example.com
+
+  ip link show
+

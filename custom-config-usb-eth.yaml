@@ -1,0 +1,50 @@
+# Proxy WITH DoH - Port 7890
+port: 7890
+socks-port: 7891
+mixed-port: 7892
+allow-lan: true
+mode: rule
+log-level: info
+
+# API for management
+# external-controller: 127.0.0.1:9090
+# secret: ""
+
+# Bind to USB NIC
+interface-name: enx1610c2d100e0
+
+dns:
+  enable: true
+  ipv6: false
+  enhanced-mode: fake-ip
+  listen: 127.0.0.1:1053
+  
+  # Use DoH
+  nameserver:
+    - https://xbox-dns.ru/dns-query
+    # - https://cloudflare-dns.com/dns-query
+    # - https://dns.google/dns-query
+  
+  fake-ip-range: 198.18.0.1/16
+
+proxies:
+  - name: "usb-direct"
+    type: direct
+    udp: true
+    interface-name: enx1610c2d100e0
+
+proxy-groups:
+  - name: Proxy
+    type: select
+    proxies:
+      - usb-direct
+      - DIRECT
+
+rules:
+  - MATCH,Proxy
+
+ntp:
+  enable: true
+  server: time.apple.com
+  port: 123
+  interval: 30

@@ -1,0 +1,39 @@
+port: 7890
+socks-port: 7891
+allow-lan: true
+mode: rule
+log-level: info
+
+# Global interface binding
+interface-name: enx1610c2d100e0
+
+dns:
+  enable: true
+  ipv6: false
+  enhanced-mode: redir-host  # Try redir-host instead of fake-ip
+  listen: 127.0.0.1:1053
+  
+  # Use simple DNS first to test
+  nameserver:
+    - 8.8.8.8
+    - 1.1.1.1
+  
+  # Then add DoH if simple DNS works
+  # nameserver:
+  #   - https://8.8.8.8/dns-query
+  #   - https://1.1.1.1/dns-query
+
+proxies: []
+
+proxy-groups:
+  - name: Proxy
+    type: select
+    proxies:
+      - DIRECT
+
+rules:
+  - IP-CIDR,192.168.0.0/16,DIRECT
+  - IP-CIDR,10.0.0.0/8,DIRECT
+  - IP-CIDR,172.16.0.0/12,DIRECT
+  - IP-CIDR,127.0.0.0/8,DIRECT
+  - MATCH,Proxy

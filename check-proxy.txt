@@ -1,0 +1,19 @@
+reader@lib15-lin-miniPC-2:~/Документы/rust-android-examples$ printenv | grep -i proxy
+cat /etc/environment 2>/dev/null | grep -i proxy
+grep -RniI proxy /etc/profile /etc/bash.bashrc /etc/profile.d 2>/dev/null
+no_proxy=*.localhost,127.0.0.0/8,::1,192.168.0.0/24,*.chelib.local,*.chelib.ru
+ftp_proxy=http://proxy:3128
+https_proxy=http://proxy:3128
+NO_PROXY=*.localhost,127.0.0.0/8,::1,192.168.0.0/24,*.chelib.local*.chelib.ru
+FTP_PROXY=http://proxy:3128
+HTTPS_PROXY=http://proxy:3128
+HTTP_PROXY=http://proxy:3128
+http_proxy=http://proxy:3128
+HTTP_PROXY="http://proxy:3128"
+HTTPS_PROXY="http://proxy:3128"
+FTP_PROXY="http://proxy:3128"
+http_proxy="http://proxy:3128"
+https_proxy="http://proxy:3128"
+ftp_proxy="http://proxy:3128"
+no_proxy="*.localhost,127.0.0.0/8,::1,192.168.0.0/24,*.chelib.local,*.chelib.ru"
+NO_PROXY="*.localhost,127.0.0.0/8,::1,192.168.0.0/24,*.chelib.local*.chelib.ru"

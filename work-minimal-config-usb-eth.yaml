@@ -1,0 +1,81 @@
+port: 7890
+socks-port: 7891
+allow-lan: true
+mode: rule
+log-level: debug
+
+# Bind Clash to your USB NIC interface
+interface-name: enx1610c2d100e0
+
+dns:
+  enable: true
+  ipv6: false
+  enhanced-mode: fake-ip
+  # listen: 127.0.0.1:1053
+  
+  # Bootstrap DNS servers (used to resolve DoH servers)
+  # default-nameserver:
+  #   - 8.8.8.8
+  #   - 1.1.1.1
+  
+  # Main DNS servers - will use the interface specified above
+  nameserver:
+    - https://xbox-dns.ru/dns-query
+    # - https://cloudflare-dns.com/dns-query
+    # - https://dns.google/dns-query
+  
+  # Fallback DNS servers
+  # fallback:
+  #   - tls://8.8.4.4
+  #   - tls://1.1.1.1
+  
+  # For resolving proxy servers (if you add any)
+  # proxy-server-nameserver:
+  #   - 8.8.8.8
+  #   - 1.1.1.1
+  
+  # fake-ip-range: 198.18.0.1/16
+  
+  # Don't use fake-ip for these domains
+  # fake-ip-filter:
+  #   - '*.local'
+  #   - '*.localhost'
+  #   - '*.chelib.local'
+  #   - '*.chelib.ru'
+  #   - '*.localnet'
+
+# Direct proxy that explicitly uses your USB NIC
+proxies:
+  - name: "usb-direct"
+    type: direct
+    udp: true
+    interface-name: enx1610c2d100e0
+
+proxy-groups:
+  - name: Proxy
+    type: select
+    proxies:
+      - usb-direct
+      - DIRECT  # Fallback to system default
+
+rules:
+  # Local networks - always direct
+  # - IP-CIDR,192.168.0.0/16,DIRECT
+  # - IP-CIDR,10.0.0.0/8,DIRECT
+  # - IP-CIDR,172.16.0.0/12,DIRECT
+  # - IP-CIDR,127.0.0.0/8,DIRECT
+  
+  # # Your internal domains - always direct
+  # - DOMAIN-SUFFIX,chelib.local,DIRECT
+  # - DOMAIN-SUFFIX,localnet,DIRECT
+  # - DOMAIN-SUFFIX,chelib.ru,DIRECT
+  # - DOMAIN-SUFFIX,localhost,DIRECT
+  
+  # Everything else through USB NIC proxy
+  - MATCH,Proxy
+ntp:
+  enable: true
+  # write-to-system: true
+  server: time.apple.com
+  port: 123
+  interval: 30  

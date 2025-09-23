@@ -1,53 +1,56 @@
-# Port for HTTP(S) proxy
 port: 7890
-# Port for SOCKS5 proxy
 socks-port: 7891
-# Allow LAN connections
 allow-lan: true
-# Clash mode
 mode: rule
-# Log level
-log-level: info
+log-level: debug
 
-# DNS configuration
+# If you use Clash.Meta/Mihomo, you can pin outbound to your USB NIC:
+# interface-name: "enx1610c2d100e0"
+
 dns:
   enable: true
+  ipv6: false
   enhanced-mode: fake-ip
   listen: 127.0.0.1:1053
-  # Force all DNS requests to go through Google's encrypted DNS service.
+
+  # Public resolvers (no corporate DNS)
+  default-nameserver:
+    - 1.1.1.1
+    - 8.8.8.8
+
+  # DoH sent directly (not via any proxy)
   nameserver:
-    - https://dns.google/dns-query
+    - https://xbox-dns.ru/dns-query#CorpProxy
+    # - https://cloudflare-dns.com/dns-query#DIRECT
+    # - https://dns.google/dns-query#DIRECT
+
+  # Use public DNS to resolve any upstreams (even though we have none here)
+  proxy-server-nameserver:
+    - 1.1.1.1
+    - 8.8.8.8
+
   fake-ip-range: 198.18.0.1/16
 
-# Proxy definitions
-proxies:
-  # Your organization's HTTP proxy
-  - name: "OrgProxy"
-    type: http
-    server: proxy
-    port: 3128
+# No upstream proxies — everything goes DIRECT via your system route (USB NIC)
+proxies: []
 
-# Proxy groups for rule routing
 proxy-groups:
-  # Main selector to choose between your proxy and a direct connection
-  - name: "Proxy"
+  - name: Proxy
     type: select
     proxies:
-      - OrgProxy
       - DIRECT
 
-# Traffic rules
 rules:
-  # Rule 1: Local network traffic should always go direct
+  # Keep private LAN ranges/direct loopback as DIRECT
   - IP-CIDR,192.168.0.0/16,DIRECT
   - IP-CIDR,10.0.0.0/8,DIRECT
   - IP-CIDR,172.16.0.0/12,DIRECT
   - IP-CIDR,127.0.0.0/8,DIRECT
-  
-  # Rule 2: Your specific local domains go direct
+
+  # Your internal domains stay DIRECT (may not resolve off corp LAN)
   - DOMAIN-SUFFIX,chelib.local,DIRECT
+  - DOMAIN-SUFFIX,localnet,DIRECT
   - DOMAIN-SUFFIX,chelib.ru,DIRECT
   - DOMAIN-SUFFIX,localhost,DIRECT
-  
-  # Rule 3: Final catch-all rule. Everything else goes through your proxy.
+
   - MATCH,Proxy
