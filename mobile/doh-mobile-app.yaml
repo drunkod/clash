@@ -1,0 +1,48 @@
+# DoH-Only Config - Port 7890 (No Real Proxies, All Traffic Direct) - Fixed with Direct-Type Proxy
+port: 7890
+socks-port: 7891
+mixed-port: 7892
+allow-lan: true
+mode: rule  # Rule mode for DNS handling, all traffic direct
+log-level: info
+
+# API for management (optional)
+# external-controller: 127.0.0.1:9090
+# secret: ""
+
+# Bind to USB NIC (optional, uncomment if needed)
+# interface-name: enx1610c2d100e0
+
+dns:
+  enable: true
+  ipv6: false
+  enhanced-mode: fake-ip  # Helps with DNS spoofing (remove if not needed)
+  listen: 127.0.0.1:1053
+  
+  # Use DoH for secure DNS
+  nameserver:
+    - https://xbox-dns.ru/dns-query
+    - https://router.comss.one/dns-query
+    - https://dns.comss.one/dns-query
+    # - https://cloudflare-dns.com/dns-query  # Uncomment for fallback
+    # - https://dns.google/dns-query  # Uncomment for another fallback
+  
+  fake-ip-range: 198.18.0.1/16  # Related to fake-ip mode (remove if not needed)
+
+proxies: 
+  - name: "direct proxy"  # Your suggested direct proxy (routes traffic directly, no proxying)
+    type: direct
+    udp: true
+
+proxy-groups:
+  - name: DirectOnly  # Group using your direct proxy
+    type: select
+    proxies:
+      - "direct proxy"  # References your direct proxy (equivalent to DIRECT)
+
+rules:
+  - IP-CIDR,192.168.0.0/16,DIRECT
+  - IP-CIDR,10.0.0.0/8,DIRECT
+  - IP-CIDR,172.16.0.0/12,DIRECT
+  - IP-CIDR,127.0.0.0/8,DIRECT
+  - MATCH,DirectOnly  # All traffic routes directly via the group
